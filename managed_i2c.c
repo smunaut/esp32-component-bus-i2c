@@ -8,6 +8,8 @@
 #include <driver/i2c.h>
 #include "include/managed_i2c.h"
 
+static SemaphoreHandle_t xSemaphore = NULL;
+
 esp_err_t i2c_init(int bus, int pin_sda, int pin_scl, int clk_speed, bool pullup_sda, bool pullup_scl) {
     i2c_config_t i2c_config = {
         .mode = I2C_MODE_MASTER,
@@ -17,6 +19,9 @@ esp_err_t i2c_init(int bus, int pin_sda, int pin_scl, int clk_speed, bool pullup
         .sda_pullup_en = pullup_sda ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
         .scl_pullup_en = pullup_scl ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
     };
+
+    xSemaphore = xSemaphoreCreateBinary();
+    xSemaphoreGive( xSemaphore );
     
     esp_err_t res = i2c_param_config(bus, &i2c_config);
     if (res != ESP_OK) return res;
@@ -40,7 +45,9 @@ esp_err_t i2c_read_bytes(int bus, uint8_t addr, uint8_t *value, size_t value_len
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }   
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -66,7 +73,9 @@ esp_err_t i2c_read_reg(int bus, uint8_t addr, uint8_t reg, uint8_t *value, size_
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -84,7 +93,9 @@ esp_err_t i2c_read_event(int bus, uint8_t addr, uint8_t *buf) {
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -100,7 +111,9 @@ esp_err_t i2c_write_byte(int bus, uint8_t addr, uint8_t value) {
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -118,7 +131,9 @@ esp_err_t i2c_write_reg(int bus, uint8_t addr, uint8_t reg, uint8_t value) {
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -138,7 +153,9 @@ esp_err_t i2c_write_reg_n(int bus, uint8_t addr, uint8_t reg, uint8_t *value, si
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -156,7 +173,9 @@ esp_err_t i2c_write_buffer(int bus, uint8_t addr, const uint8_t* buffer, uint16_
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -176,7 +195,9 @@ esp_err_t i2c_write_buffer_reg(int bus, uint8_t addr, uint8_t reg, const uint8_t
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
@@ -200,7 +221,9 @@ esp_err_t i2c_write_reg32(int bus, uint8_t addr, uint8_t reg, uint32_t value) {
     res = i2c_master_stop(cmd);
     if (res != ESP_OK) { i2c_cmd_link_delete(cmd); return res; }
 
+    if (!xSemaphoreTake(xSemaphore, 1000 / portTICK_RATE_MS)) printf("i2c lock\n");
     res = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    xSemaphoreGive( xSemaphore );
     i2c_cmd_link_delete(cmd);
     return res;
 }
